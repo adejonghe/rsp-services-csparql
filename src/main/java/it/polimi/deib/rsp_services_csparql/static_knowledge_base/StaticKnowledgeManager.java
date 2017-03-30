@@ -20,20 +20,31 @@
  ******************************************************************************/
 package it.polimi.deib.rsp_services_csparql.static_knowledge_base;
 
-import eu.larkc.csparql.common.RDFTable;
-import it.polimi.deib.rsp_services_csparql.commons.Csparql_Engine;
+import java.io.StringWriter;
+import java.net.URI;
+
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
+import org.restlet.engine.header.Header;
 import org.restlet.representation.Representation;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
+import org.restlet.util.Series;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+
+import eu.larkc.csparql.common.RDFTable;
+import it.polimi.deib.rsp_services_csparql.commons.Csparql_Engine;
+import net.sf.saxon.TransformerFactoryImpl;
 
 public class StaticKnowledgeManager extends ServerResource {
 
@@ -46,6 +57,14 @@ public class StaticKnowledgeManager extends ServerResource {
 		Form f = new Form(rep);
 		
 		try {
+			
+			String origin = getRequest().getClientInfo().getAddress();
+            Series<Header> responseHeaders = (Series<Header>) getResponse().getAttributes().get("org.restlet.http.headers");
+            if (responseHeaders == null) {
+                responseHeaders = new Series<Header>(Header.class);
+                getResponse().getAttributes().put("org.restlet.http.headers", responseHeaders);
+            }
+            responseHeaders.add(new Header("Access-Control-Allow-Origin", "*"));
 
 			Csparql_Engine engine = (Csparql_Engine) getContext().getAttributes().get("csparqlengine");
 
@@ -70,7 +89,17 @@ public class StaticKnowledgeManager extends ServerResource {
 				queryBody = f.getFirstValue("queryBody");
 				engine.execUpdateQueryOverDatasource(queryBody);
 				break;
-
+				
+			case "putKML":
+				String fileKML = f.getFirstValue("fileKML");
+				String fileXSLT = f.getFirstValue("fileXSLT");
+				String featureType = f.getFirstValue("featureType");
+							
+				iri = fileKML;
+				serialization = convertKML2RDF(fileKML, fileXSLT, featureType);
+				engine.addStaticModel(iri, serialization);
+				break;
+				
 			default:
 				throw new Exception();
 			}
@@ -88,6 +117,30 @@ public class StaticKnowledgeManager extends ServerResource {
 			this.release();			
 		}
 
+	}
+	
+	private String convertKML2RDF(String fileKML, String fileXSLT, String featureType) {		
+        System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");        
+
+        String output = ""; 
+		
+        try {
+            StringWriter writer = new StringWriter();	
+        	TransformerFactory tFactory = new TransformerFactoryImpl();
+        	
+            Transformer transformer = tFactory.newTransformer(new StreamSource(new URI(fileXSLT).toString()));  
+            transformer.transform(new StreamSource(new URI(fileKML).toString()), new StreamResult(writer));  
+            logger.debug("XSLT transformation completed successfully.");      
+            output = writer.toString().replaceAll("GEOMETRYCOLLECTION", "MULTIPOLYGON");
+            output = output.replaceAll(", POLYGON", ", ");
+            output = output.replaceAll("\\(POLYGON\\(", "((");
+            output = output.replaceAll("FEATURE_TYPE", featureType);
+            logger.debug(output);
+        } catch (Exception e) {  
+        	e.printStackTrace();  
+        }  
+        
+        return output;
 	}
 
 	@Get

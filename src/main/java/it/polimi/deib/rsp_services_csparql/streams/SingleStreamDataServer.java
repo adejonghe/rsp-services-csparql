@@ -38,12 +38,14 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.*;
 
 import org.apache.http.HttpException;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.lang.JsonLDReader;
 import org.glassfish.tyrus.client.ClientManager;
 import org.glassfish.tyrus.client.ClientProperties;
 import org.restlet.data.ClientInfo;
@@ -103,7 +105,7 @@ public class SingleStreamDataServer extends ServerResource {
             responseHeaders = new Series<Header>(Header.class);
             getResponse().getAttributes().put("org.restlet.http.headers", responseHeaders);
         }
-        responseHeaders.add(new Header("Access-Control-Allow-Origin", origin));
+        responseHeaders.add(new Header("Access-Control-Allow-Origin", "*"));
         responseHeaders.add(new Header("Access-Control-Allow-Methods", "PUT,POST,DELETE"));
 
     }
@@ -163,22 +165,23 @@ public class SingleStreamDataServer extends ServerResource {
                 responseHeaders = new Series<Header>(Header.class);
                 getResponse().getAttributes().put("org.restlet.http.headers", responseHeaders);
             }
-            responseHeaders.add(new Header("Access-Control-Allow-Origin", origin));
+            responseHeaders.add(new Header("Access-Control-Allow-Origin", "*"));
 
             csparqlStreamTable = (Hashtable<String, Csparql_RDF_Stream>) getContext().getAttributes().get("csaprqlinputStreamTable");
             engine = (Csparql_Engine) getContext().getAttributes().get("csparqlengine");
 
             String inputStreamName = null;
 
-            try {
+//            try {
                 Form f = new Form(rep);
 
                 inputStreamName = URLDecoder.decode(f.getFirstValue("streamIri"), "UTF-8");
                 sGraph = RDFDataMgr.loadModel(inputStreamName, Lang.JSONLD);
                 //sGraph.write(System.out);
-            }catch (Exception e){
-                logger.error(e.getMessage(), e);
-            }
+//            } catch (Exception e){
+//                logger.error(e.getMessage(), e);
+//                return;
+//            }
 
             QueryExecution qexec = QueryExecutionFactory.create(query, sGraph);
 
@@ -434,13 +437,13 @@ public class SingleStreamDataServer extends ServerResource {
         }
     }
 
-    public Session connectToWS(Csparql_RDF_Stream stream) {
+    public Session connectToWS(Csparql_RDF_Stream stream) throws DeploymentException, IOException, URISyntaxException {
 
         final Csparql_RDF_Stream str = stream;
 
         ClientManager client = ClientManager.createClient();
         ClientEndpointConfig cec = ClientEndpointConfig.Builder.create().build();
-        Session session;
+        Session session = null;
 
         ClientManager.ReconnectHandler reconnectHandler = new ClientManager.ReconnectHandler() {
 
@@ -460,7 +463,7 @@ public class SingleStreamDataServer extends ServerResource {
                         try {
                             logger.info("Disconnection Handler - Connection failed");
                             System.out.println(longToDate(System.currentTimeMillis()) + " - Disconnection Handler - Connection failed");
-                            Thread.sleep(i * i * 1000);
+                            Thread.sleep(i * i * 200);
                         } catch (Exception e) {
                             logger.error(e.getMessage(), e);
                             return true;
@@ -471,7 +474,7 @@ public class SingleStreamDataServer extends ServerResource {
                         try {
                             logger.info("Disconnection Handler - Connection failed");
                             System.out.println(longToDate(System.currentTimeMillis()) + " - Disconnection Handler - Connection failed");
-                            Thread.sleep(i * i * 1000);
+                            Thread.sleep(i * i * 200);
                         } catch (Exception e) {
                             logger.error(e.getMessage(), e);
                             return true;
@@ -491,7 +494,7 @@ public class SingleStreamDataServer extends ServerResource {
                     try {
                         logger.info("Disconnection Handler - Connection failed");
                         System.out.println(longToDate(System.currentTimeMillis()) + " - Disconnection Handler - Connection failed");
-                        Thread.sleep(i * i * 1000);
+                        Thread.sleep(i * i * 200);
                     } catch (Exception e) {
                         logger.error(e.getMessage(), e);
                         return true;
@@ -502,7 +505,7 @@ public class SingleStreamDataServer extends ServerResource {
                     try {
                         logger.info("Disconnection Handler - Connection failed");
                         System.out.println(longToDate(System.currentTimeMillis()) + " - Disconnection Handler - Connection failed");
-                        Thread.sleep(i * i * 1000);
+                        Thread.sleep(i * i * 200);
                     } catch (Exception e) {
                         logger.error(e.getMessage(), e);
                         return true;
@@ -517,60 +520,56 @@ public class SingleStreamDataServer extends ServerResource {
             }
         };
 
-        client.getProperties().put(ClientProperties.RECONNECT_HANDLER, reconnectHandler);
-        client.setDefaultMaxSessionIdleTimeout(0);
+		client.getProperties().put(ClientProperties.RECONNECT_HANDLER, reconnectHandler);
+		client.setDefaultMaxSessionIdleTimeout(0);
 
-        //		lastConnectionTS = System.currentTimeMillis();
-        try {
-            //			messageLatch = new CountDownLatch(1);
-            session = client.connectToServer(new Endpoint() {
-                private Logger logger = LoggerFactory.getLogger(this.getClass());
+		// lastConnectionTS = System.currentTimeMillis();
+		// messageLatch = new CountDownLatch(1);
+		session = client.connectToServer(new Endpoint() {
+			private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-                @Override
-                public void onOpen(final Session session, EndpointConfig EndpointConfig) {
+			@Override
+			public void onOpen(final Session session, EndpointConfig EndpointConfig) {
 
-                    //					messageCount = 0;
-                    logger.info("Client connected to {}", session.getRequestURI().toString());
-                    System.out.println("Client connected to " + session.getRequestURI().toString());
+				// messageCount = 0;
+				logger.info("Client connected to {}", session.getRequestURI().toString());
+				System.out.println("Client connected to " + session.getRequestURI().toString());
 
-                    session.addMessageHandler(new MessageHandler.Whole<String>() {
+				session.addMessageHandler(new MessageHandler.Whole<String>() {
 
-                        @Override
-                        public void onMessage(String message) {
-                            try {
-                                Model model = deserializizeAsJsonSerialization(message, null);
-                                str.feed_RDF_stream(model);
-//                                System.out.println(model.size() + " triples streamed so far");
-//                                logger.info("{} triples streamed so far", model.size());
-                            } catch (Exception e) {
-                                logger.error(e.getMessage(), e);
-                            }
-                        }
-                    });
-                }
+					@Override
+					public void onMessage(String message) {
+						try {
+							Model model = deserializeAsJsonSerialization(message, null);
+							str.feed_RDF_stream(model);
+							// System.out.println(model.size() + " triples
+							// streamed so far");
+							logger.info("{} triples streamed so far", model.size());
+						} catch (Exception e) {
+							logger.error(e.getMessage(), e);
+						}
+					}
+				});
+			}
 
-                @Override
-                public void onClose(Session session, CloseReason reason){
-                    System.out.println("Closing Session " + session.getId() + " because of " +  reason.getReasonPhrase());
-                    logger.info("Closing Session {} because of {}", session.getId(), reason.getReasonPhrase());
-                }
+			@Override
+			public void onClose(Session session, CloseReason reason) {
+				System.out.println("Closing Session " + session.getId() + " because of " + reason.getReasonPhrase());
+				logger.info("Closing Session {} because of {}", session.getId(), reason.getReasonPhrase());
+			}
 
-                @Override
-                public void onError(Session session, Throwable t) {
-                    logger.error(t.getMessage(), t);
-                }
-            }, cec, new URI(str.getSourceURI()));
-            i = 0;
-            j = 0;
-            logger.info("Connected!!\nSession id: {}", session.getId());
-            System.out.println("Connected!!\nSession id: " + session.getId());
-            //			messageLatch.await();
+			@Override
+			public void onError(Session session, Throwable t) {
+				logger.error(t.getMessage(), t);
+			}
+		}, cec, new URI(str.getSourceURI()));
+		i = 0;
+		j = 0;
+		logger.info("Connected!!\nSession id: {}", session.getId());
+		System.out.println("Connected!!\nSession id: " + session.getId());
+		// messageLatch.await();
 
-        } catch (Exception e) {
-            logger.error(e.getMessage(),e);
-            return null;
-        }
-        return session;
+		return session; 
 
     }
 
@@ -580,7 +579,7 @@ public class SingleStreamDataServer extends ServerResource {
         return DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar).toXMLFormat();
     }
 
-    public static Model deserializizeAsJsonSerialization(String asJsonSerialization, JsonLdOptions options){
+    public static Model deserializeAsJsonSerialization(String asJsonSerialization, JsonLdOptions options) {
 
 //		System.out.println(asJsonSerialization);
 //		logger.info("Input string {}", asJsonSerialization);

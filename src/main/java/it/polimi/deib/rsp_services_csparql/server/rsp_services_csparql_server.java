@@ -20,33 +20,33 @@
  ******************************************************************************/
 package it.polimi.deib.rsp_services_csparql.server;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.Hashtable;
+
+import org.apache.log4j.PropertyConfigurator;
+import org.glassfish.tyrus.server.Server;
+import org.restlet.Application;
+import org.restlet.Component;
+import org.restlet.Restlet;
+import org.restlet.data.Protocol;
+import org.restlet.routing.Router;
+import org.restlet.routing.Template;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import it.polimi.deib.rsp_services_csparql.commons.Csparql_Engine;
 import it.polimi.deib.rsp_services_csparql.commons.Csparql_Query;
 import it.polimi.deib.rsp_services_csparql.commons.Csparql_RDF_Stream;
 import it.polimi.deib.rsp_services_csparql.configuration.Config;
 import it.polimi.deib.rsp_services_csparql.observers.MultipleObserversDataServer;
 import it.polimi.deib.rsp_services_csparql.observers.SingleObserverDataServer;
+import it.polimi.deib.rsp_services_csparql.observers.utilities.QueryResultWS;
 import it.polimi.deib.rsp_services_csparql.queries.MultipleQueriesDataServer;
 import it.polimi.deib.rsp_services_csparql.queries.SingleQueryDataServer;
 import it.polimi.deib.rsp_services_csparql.static_knowledge_base.StaticKnowledgeManager;
-import it.polimi.deib.rsp_services_csparql.streams.MultipleStreamsDataServer;
 import it.polimi.deib.rsp_services_csparql.streams.SingleStreamDataServer;
-
-import java.io.File;
-import java.net.URL;
-import java.util.Hashtable;
-
-import org.apache.log4j.PropertyConfigurator;
-import org.restlet.Application;
-import org.restlet.Component;
-import org.restlet.Restlet;
-import org.restlet.data.Protocol;
-import org.restlet.resource.Directory;
-import org.restlet.routing.Router;
-import org.restlet.routing.Template;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sun.misc.ClassLoaderUtil;
 
 public class rsp_services_csparql_server extends Application{
 
@@ -118,6 +118,19 @@ public class rsp_services_csparql_server extends Application{
         component.start();
 
         System.out.println("Server Started on port " + Config.getInstance().getServerPort());
+                
+        Server server = new Server("localhost", 8176, "/results", null, QueryResultWS.class);
+        
+        try {
+            server.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.print("Please press a key to stop the server.");
+            reader.readLine();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            server.stop();
+        }
 
     }
 

@@ -20,16 +20,6 @@
  ******************************************************************************/
 package it.polimi.deib.rsp_services_csparql.queries;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import it.polimi.deib.rsp_services_csparql.commons.Csparql_Engine;
-import it.polimi.deib.rsp_services_csparql.commons.Csparql_Query;
-import it.polimi.deib.rsp_services_csparql.commons.Csparql_RDF_Stream;
-import it.polimi.deib.rsp_services_csparql.configuration.Config;
-import it.polimi.deib.rsp_services_csparql.observers.utilities.Observer4HTTP;
-import it.polimi.deib.rsp_services_csparql.queries.utilities.CsparqlQueryDescriptionForGet;
-import it.polimi.deib.rsp_services_csparql.queries.utilities.Csparql_Observer_Descriptor;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -53,10 +43,20 @@ import org.streamreasoning.rsp_services.commons.Rsp_services_Component_Status;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 
 import eu.larkc.csparql.cep.api.RdfStream;
 import eu.larkc.csparql.core.engine.CsparqlQueryResultProxy;
 import eu.larkc.csparql.core.engine.RDFStreamFormatter;
+import it.polimi.deib.rsp_services_csparql.commons.Csparql_Engine;
+import it.polimi.deib.rsp_services_csparql.commons.Csparql_Query;
+import it.polimi.deib.rsp_services_csparql.commons.Csparql_RDF_Stream;
+import it.polimi.deib.rsp_services_csparql.configuration.Config;
+import it.polimi.deib.rsp_services_csparql.observers.utilities.Observer4HTTP;
+import it.polimi.deib.rsp_services_csparql.observers.utilities.QueryResultWSObserver;
+import it.polimi.deib.rsp_services_csparql.queries.utilities.CsparqlQueryDescriptionForGet;
+import it.polimi.deib.rsp_services_csparql.queries.utilities.Csparql_Observer_Descriptor;
 
 public class SingleQueryDataServer extends ServerResource {
 
@@ -76,12 +76,13 @@ public class SingleQueryDataServer extends ServerResource {
             responseHeaders = new Series<Header>(Header.class);
             getResponse().getAttributes().put("org.restlet.http.headers", responseHeaders);
         }
-        responseHeaders.add(new Header("Access-Control-Allow-Origin", origin));
+        responseHeaders.add(new Header("Access-Control-Allow-Origin", "*"));
+        responseHeaders.add(new Header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE"));
     }
 
     @SuppressWarnings({ "unchecked" })
     @Put
-    public void registerQuery(Representation rep){
+    public void registerQuery(Representation rep) {
         try{
 
             ArrayList<String> inputStreamNameList;
@@ -100,7 +101,7 @@ public class SingleQueryDataServer extends ServerResource {
                 responseHeaders = new Series<Header>(Header.class);
                 getResponse().getAttributes().put("org.restlet.http.headers", responseHeaders);
             }
-            responseHeaders.add(new Header("Access-Control-Allow-Origin", origin));
+            responseHeaders.add(new Header("Access-Control-Allow-Origin", "*"));
 
             String queryBody = rep.getText();
 
@@ -153,6 +154,7 @@ public class SingleQueryDataServer extends ServerResource {
                                     this.getResponse().setEntity(gson.toJson("Error while registering stream created by stream query"), MediaType.APPLICATION_JSON);
                                 } else {
                                     rp.addObserver(stream);
+                                    rp.addObserver(new QueryResultWSObserver(parameterQueryName));
                                     getContext().getAttributes().put("csaprqlinputStreamTable", csparqlStreamTable);
                                     getContext().getAttributes().put("csaprqlQueryTable", csparqlQueryTable);
                                     getContext().getAttributes().put("csparqlengine", engine);
@@ -173,6 +175,8 @@ public class SingleQueryDataServer extends ServerResource {
 
                             //test
                             //							rp.addObserver(new ConsoleFormatter());
+                            
+                            rp.addObserver(new QueryResultWSObserver(parameterQueryName));
 
                             getContext().getAttributes().put("csaprqlinputStreamTable", csparqlStreamTable);
                             getContext().getAttributes().put("csaprqlQueryTable", csparqlQueryTable);
@@ -238,7 +242,7 @@ public class SingleQueryDataServer extends ServerResource {
                 responseHeaders = new Series<Header>(Header.class);
                 getResponse().getAttributes().put("org.restlet.http.headers", responseHeaders);
             }
-            responseHeaders.add(new Header("Access-Control-Allow-Origin", origin));
+            responseHeaders.add(new Header("Access-Control-Allow-Origin", "*"));
 
             if(csparqlQueryTable.containsKey(queryName)){
                 Csparql_Query csparqlQuery = csparqlQueryTable.get(queryName);
@@ -299,7 +303,7 @@ public class SingleQueryDataServer extends ServerResource {
                 responseHeaders = new Series<Header>(Header.class);
                 getResponse().getAttributes().put("org.restlet.http.headers", responseHeaders);
             }
-            responseHeaders.add(new Header("Access-Control-Allow-Origin", origin));
+            responseHeaders.add(new Header("Access-Control-Allow-Origin", "*"));
 
 
             String callbackUrl = rep.getText();
@@ -424,7 +428,7 @@ public class SingleQueryDataServer extends ServerResource {
                 responseHeaders = new Series<Header>(Header.class);
                 getResponse().getAttributes().put("org.restlet.http.headers", responseHeaders);
             }
-            responseHeaders.add(new Header("Access-Control-Allow-Origin", origin));
+            responseHeaders.add(new Header("Access-Control-Allow-Origin", "*"));
 
             if(csparqlQueryTable.containsKey(queryName)){
                 Csparql_Query csparqlQuery = csparqlQueryTable.get(queryName);
