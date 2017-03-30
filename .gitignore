@@ -1,5 +1,9 @@
 /log/*
 *.class
+*.db
+*.mem
+*.log
+/indexes/*
 
 # Package Files #
 *.jar
