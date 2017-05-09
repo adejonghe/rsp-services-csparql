@@ -273,19 +273,29 @@ This work was partially supported by the European project LarKC (FP7-215535) and
             <plugin>
                 <groupId>com.spotify</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
-                <version>0.3.8</version>
+                <version>0.4.13</version>
                 <configuration>
                     <imageName>${docker.image.prefix}/${project.artifactId}</imageName>
-                    <baseImage>java</baseImage>
-                    <entryPoint>["java", "-jar", "/${project.build.finalName}.jar"]</entryPoint>
+                   <baseImage>ubuntu</baseImage>
+					<entryPoint>["java", "-cp", "/rsp-services-csparql-0.5-SNAPSHOT.jar:/lib/*:/parliament/*" , "it.polimi.deib.rsp_services_csparql.server.rsp_services_csparql_server", "/config.properties", "/log4j.properties"]</entryPoint>
                     <exposes>
                         <expose>8175</expose>
-                    </exposes>
+                    </exposes>       
+                    <runs>
+                    	<run>apt-get -qq update &amp;&amp; apt-get -qq install -y openjdk-8-jre</run>
+                    </runs>        
                     <resources>
                         <resource>
                             <targetPath>/</targetPath>
                             <directory>${project.build.directory}</directory>
                             <include>${project.build.finalName}.jar</include>
+                        </resource>
+                        <resource>
+                            <targetPath>/</targetPath>
+                            <directory>${project.build.directory}/classes/</directory>
+                            <includes>
+                                <include>*.properties</include>
+                            </includes>
                         </resource>
                         <resource>
                             <targetPath>/lib</targetPath>
@@ -294,7 +304,18 @@ This work was partially supported by the European project LarKC (FP7-215535) and
                                 <include>*.jar</include>
                             </includes>
                         </resource>
+                        <resource>
+                            <targetPath>/parliament</targetPath>
+                            <directory>${env.PARLIAMENT_LIB}</directory>
+                            <includes>
+                                <include>*</include>
+                            </includes>
+                        </resource>
                     </resources>
+                    <env>
+                    	<LD_LIBRARY_PATH>/parliament</LD_LIBRARY_PATH>
+                    	<PARLIAMENT_CONFIG_PATH>/parliament</PARLIAMENT_CONFIG_PATH>
+                    </env>
                 </configuration>
             </plugin>
             <plugin>
