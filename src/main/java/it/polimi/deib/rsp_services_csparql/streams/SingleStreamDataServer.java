@@ -440,6 +440,8 @@ public class SingleStreamDataServer extends ServerResource {
     public Session connectToWS(Csparql_RDF_Stream stream) throws DeploymentException, IOException, URISyntaxException {
 
         final Csparql_RDF_Stream str = stream;
+        
+        logger.info("Connect to: " + str.getSourceURI());
 
         ClientManager client = ClientManager.createClient();
         ClientEndpointConfig cec = ClientEndpointConfig.Builder.create().build();

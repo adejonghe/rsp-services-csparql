@@ -119,29 +119,25 @@ public class StaticKnowledgeManager extends ServerResource {
 
 	}
 	
-	private String convertKML2RDF(String fileKML, String fileXSLT, String featureType) {		
+	private String convertKML2RDF(String fileKML, String fileXSLT, String featureType) throws Exception {		
         System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");        
 
         String output = ""; 
 		
-        try {
-            StringWriter writer = new StringWriter();	
-        	TransformerFactory tFactory = new TransformerFactoryImpl();
-        	
-            Transformer transformer = tFactory.newTransformer(new StreamSource(new URI(fileXSLT).toString()));  
-            transformer.transform(new StreamSource(new URI(fileKML).toString()), new StreamResult(writer));  
-            logger.debug("XSLT transformation completed successfully.");      
-            // HACK  
-            // GEOMETRYCOLLECTION seems not to be supported and has to be replaced by MULTIPOLYGON
-            // This only works when GEOMETRYCOLLECTION only contains POLYGONSs
-            output = writer.toString().replaceAll("GEOMETRYCOLLECTION", "MULTIPOLYGON");
-            output = output.replaceAll(", POLYGON", ", ");
-            output = output.replaceAll("\\(POLYGON\\(", "((");
-            output = output.replaceAll("FEATURE_TYPE", featureType);
-            logger.debug(output);
-        } catch (Exception e) {  
-        	e.printStackTrace();  
-        }  
+        StringWriter writer = new StringWriter();	
+    	TransformerFactory tFactory = new TransformerFactoryImpl();
+    	
+        Transformer transformer = tFactory.newTransformer(new StreamSource(new URI(fileXSLT).toString()));  
+        transformer.transform(new StreamSource(new URI(fileKML).toString()), new StreamResult(writer));  
+        logger.debug("XSLT transformation completed successfully.");      
+        // HACK  
+        // GEOMETRYCOLLECTION seems not to be supported and has to be replaced by MULTIPOLYGON
+        // This only works when GEOMETRYCOLLECTION only contains POLYGONSs
+        output = writer.toString().replaceAll("GEOMETRYCOLLECTION", "MULTIPOLYGON");
+        output = output.replaceAll(", POLYGON", ", ");
+        output = output.replaceAll("\\(POLYGON\\(", "((");
+        output = output.replaceAll("FEATURE_TYPE", featureType);
+        logger.debug(output);
         
         return output;
 	}

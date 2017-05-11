@@ -20,8 +20,6 @@
  ******************************************************************************/
 package it.polimi.deib.rsp_services_csparql.server;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Hashtable;
 
@@ -87,25 +85,6 @@ public class rsp_services_csparql_server extends Application{
         engine = new Csparql_Engine();
         engine.initialize();
 
-//		resourcesPath = new File(Config.getInstance().getResourcesPath()).getAbsolutePath();
-//		logger.debug("Static resources path: {}", resourcesPath);
-//
-//		if(System.getProperty("os.name").contains("Windows")){
-//			resources = new Application() {
-//				@Override
-//				public Restlet createInboundRoot() {
-//					return new Directory(getContext(), "file:///" + resourcesPath + "/");
-//				}
-//			};
-//		} else {
-//			resources = new Application() {
-//				@Override
-//				public Restlet createInboundRoot() {
-//					return new Directory(getContext(), "file://" + resourcesPath + "/");
-//				}
-//			};
-//		}
-
         component = new Component();
         component.getServers().add(Protocol.HTTP, Config.getInstance().getServerPort());
         component.getClients().add(Protocol.FILE);
@@ -113,24 +92,13 @@ public class rsp_services_csparql_server extends Application{
         rsp_services_csparql_server csparqlServer = new rsp_services_csparql_server();
         component.getDefaultHost().attach("", csparqlServer);
 
-//		component.getDefaultHost().attach(resources);
-
         component.start();
 
         System.out.println("Server Started on port " + Config.getInstance().getServerPort());
                 
         Server server = new Server("localhost", 8176, "/results", null, QueryResultWS.class);
         
-        try {
-            server.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            System.out.print("Please press a key to stop the server.");
-            reader.readLine();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            server.stop();
-        }
+        server.start();
 
     }
 
