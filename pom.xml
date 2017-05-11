@@ -53,7 +53,7 @@ This work was partially supported by the European project LarKC (FP7-215535) and
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <docker.image.prefix>streamreasoning</docker.image.prefix>
+        <docker.image.prefix>caprads</docker.image.prefix>
     </properties>
 
     <dependencies>
@@ -277,9 +277,10 @@ This work was partially supported by the European project LarKC (FP7-215535) and
                 <configuration>
                     <imageName>${docker.image.prefix}/${project.artifactId}</imageName>
                    <baseImage>ubuntu</baseImage>
-					<entryPoint>["java", "-cp", "/rsp-services-csparql-0.5-SNAPSHOT.jar:/lib/*:/parliament/*" , "it.polimi.deib.rsp_services_csparql.server.rsp_services_csparql_server", "/config.properties", "/log4j.properties"]</entryPoint>
+					<entryPoint>["java", "-cp", "/parliament/*:/${project.build.finalName}.jar:/lib/*" , "it.polimi.deib.rsp_services_csparql.server.rsp_services_csparql_server", "/config.properties", "/log4j.properties"]</entryPoint>
                     <exposes>
                         <expose>8175</expose>
+                        <expose>8176</expose>
                     </exposes>       
                     <runs>
                     	<run>apt-get -qq update &amp;&amp; apt-get -qq install -y openjdk-8-jre</run>
