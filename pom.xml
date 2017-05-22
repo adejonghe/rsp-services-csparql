@@ -305,13 +305,6 @@ This work was partially supported by the European project LarKC (FP7-215535) and
                                 <include>*.jar</include>
                             </includes>
                         </resource>
-                        <resource>
-                            <targetPath>/parliament</targetPath>
-                            <directory>${env.PARLIAMENT_LIB}</directory>
-                            <includes>
-                                <include>*</include>
-                            </includes>
-                        </resource>
                     </resources>
                     <env>
                     	<LD_LIBRARY_PATH>/parliament</LD_LIBRARY_PATH>
