@@ -83,8 +83,8 @@ This work was partially supported by the European project LarKC (FP7-215535) and
         
 		<dependency>
 		    <groupId>net.sf.saxon</groupId>
-		    <artifactId>saxonhe</artifactId>
-		    <version>9.0</version>
+		    <artifactId>Saxon-HE</artifactId>
+		    <version>9.4</version>
 		</dependency>		
 	 	
         <dependency>
