@@ -20,8 +20,13 @@
  ******************************************************************************/
 package it.polimi.deib.rsp_services_csparql.static_knowledge_base;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -41,9 +46,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.hp.hpl.jena.rdf.model.Model;
 
 import eu.larkc.csparql.common.RDFTable;
 import it.polimi.deib.rsp_services_csparql.commons.Csparql_Engine;
+import it.polimi.deib.rsp_services_csparql.streams.SingleStreamDataServer;
 import net.sf.saxon.TransformerFactoryImpl;
 
 public class StaticKnowledgeManager extends ServerResource {
@@ -98,6 +105,33 @@ public class StaticKnowledgeManager extends ServerResource {
 				iri = fileKML;
 				serialization = convertKML2RDF(fileKML, fileXSLT, featureType);
 				engine.addStaticModel(iri, serialization);
+				break;
+				
+			case "putJSONLD":
+				String fileJSONLD = f.getFirstValue("file");
+
+				URL url = new URL(fileJSONLD);
+				URLConnection urlConnection = url.openConnection();
+				try {
+				    BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+				    String line = null;
+				    StringBuilder sb = new StringBuilder();
+				    while ((line = reader.readLine()) != null) {
+				        sb.append(line).append("\n");
+				    }
+				    
+				    String fileAsString = sb.toString();
+				    
+					Model model = SingleStreamDataServer.deserializeAsJsonSerialization(fileAsString, null);
+					StringWriter sWriter = new StringWriter();
+					model.write(sWriter, "TURTLE");
+					engine.addStaticModel(fileJSONLD, sWriter.toString());
+					
+				} catch (IOException x) {
+				    System.err.println(x);
+				}
+							
+
 				break;
 				
 			default:
@@ -167,7 +201,4 @@ public class StaticKnowledgeManager extends ServerResource {
 		}
 
 	}
-
-
-
 }

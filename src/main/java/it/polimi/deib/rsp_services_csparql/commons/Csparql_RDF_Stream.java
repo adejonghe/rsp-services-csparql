@@ -99,6 +99,7 @@ public class Csparql_RDF_Stream implements RDF_Stream_Interface{
 
     @Override
 	public void feed_RDF_stream(Object dataSerialization) {
+    	System.out.println(dataSerialization);
 		RdfQuadruple quadruple = (RdfQuadruple) dataSerialization;
 		stream.put(quadruple);
 	}

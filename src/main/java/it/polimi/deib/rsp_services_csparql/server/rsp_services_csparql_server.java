@@ -120,7 +120,7 @@ public class rsp_services_csparql_server extends Application{
 
 //		router.attach("/demo", resources.createInboundRoot());
         router.attach("/streams", SingleStreamDataServer.class);
-//		router.attach("/streams/{streamname}", SingleStreamDataServer.class);
+		router.attach("/streams/{streamname}", SingleStreamDataServer.class);
         router.attach("/queries", MultipleQueriesDataServer.class);
         router.attach("/queries/{queryname}", SingleQueryDataServer.class);
         router.attach("/queries/{queryname}/observers", MultipleObserversDataServer.class);
