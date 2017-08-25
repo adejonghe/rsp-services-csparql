@@ -26,6 +26,7 @@ import java.util.Hashtable;
 import java.util.Set;
 
 import org.restlet.data.ClientInfo;
+import org.restlet.data.Form;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
 import org.restlet.engine.header.Header;
@@ -131,7 +132,7 @@ public class SingleStreamDataServer extends ServerResource {
 
 	@SuppressWarnings({ "unchecked" })
 	@Put
-	public void registerStream(){
+	public void registerStream(Representation rep){
 
 		try{
 
@@ -146,13 +147,21 @@ public class SingleStreamDataServer extends ServerResource {
 			csparqlStreamTable = (Hashtable<String, Csparql_RDF_Stream>) getContext().getAttributes().get("csaprqlinputStreamTable");
 			engine = (Csparql_Engine) getContext().getAttributes().get("csparqlengine");
 
-			String inputStreamName = URLDecoder.decode((String) this.getRequest().getAttributes().get("streamname"), "UTF-8");
+			String inputStreamName = URLDecoder.decode((String) this.getRequest().getAttributes().get("streamname"), "UTF-8");			
 
 			if(!csparqlStreamTable.containsKey(inputStreamName)){
 				RdfStream stream = new RdfStream(inputStreamName);
 				Csparql_RDF_Stream csparqlStream = new Csparql_RDF_Stream(stream, Rsp_services_Component_Status.RUNNING);
 				csparqlStreamTable.put(inputStreamName, csparqlStream);
 				engine.registerStream(stream);
+				
+				Form f = new Form(rep);
+				String tboxurl = f.getFirstValue("tbox");
+				
+				if (tboxurl != null && !tboxurl.isEmpty()) {
+					csparqlStream.settBox(getTboxModel(tboxurl));
+				}
+				
 				getContext().getAttributes().put("csaprqlinputStreamTable", csparqlStreamTable);
 				getContext().getAttributes().put("csparqlengine", engine);
 				this.getResponse().setStatus(Status.SUCCESS_OK,"Stream " + inputStreamName + " succesfully registered");
@@ -329,5 +338,25 @@ public class SingleStreamDataServer extends ServerResource {
 		}
 		
 		return model;
+	}
+	
+	private Model getTboxModel(String urlList) {
+		
+		String urls[] = urlList.split(";");
+		
+		Model tbox = ModelFactory.createDefaultModel();
+		
+		for (String url: urls) {
+			
+			try {
+				Model m = ModelFactory.createDefaultModel();
+				m.read(url);
+				tbox.add(m);
+			} catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		
+		return tbox;
 	}
 }
